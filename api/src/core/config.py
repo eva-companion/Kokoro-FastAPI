@@ -33,9 +33,9 @@ class Settings(BaseSettings):
     sample_rate: int = 24000
     default_volume_multiplier: float = 1.0
     # Text Processing Settings
-    target_min_tokens: int = 350  # Target minimum tokens per chunk
-    target_max_tokens: int = 1024  # Target maximum tokens per chunk
-    absolute_max_tokens: int = 2048  # Absolute maximum tokens per chunk
+    target_min_tokens: int = 175  # Target minimum tokens per chunk
+    target_max_tokens: int = 250  # Target maximum tokens per chunk
+    absolute_max_tokens: int = 450  # Absolute maximum tokens per chunk
     advanced_text_normalization: bool = True  # Preproesses the text before misiki
     voice_weight_normalization: bool = (
         True  # Normalize the voice weights so they add up to 1
@@ -44,7 +44,7 @@ class Settings(BaseSettings):
     gap_trim_ms: int = (
         1  # Base amount to trim from streaming chunk ends in milliseconds
     )
-    dynamic_gap_trim_padding_ms: int = 410  # Padding to add to dynamic gap trim
+    dynamic_gap_trim_padding_ms: int = 600  # Padding to add to dynamic gap trim
     dynamic_gap_trim_padding_char_multiplier: dict[str, float] = {
         ".": 1,
         "!": 0.9,

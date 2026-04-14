@@ -333,6 +333,135 @@ Key Streaming Metrics:
 *Note: Artifacts in intonation can increase with smaller chunks*
 </details>
 
+## Configuration & Tuning
+
+<details>
+<summary>Voice Quality Adjustments</summary>
+
+### Adjusting Speech Naturalness
+
+If you're experiencing robotic-sounding speech or unnatural pausing, you can tune these settings:
+
+#### 1. **Text Chunking Settings** (Primary naturalness controls)
+
+Located in `api/src/core/config.py`:
+
+```python
+# Smaller chunks = more natural pauses at sentence boundaries
+target_min_tokens: int = 175   # Minimum tokens per chunk (default: 175)
+target_max_tokens: int = 250   # Target maximum per chunk (default: 250)
+absolute_max_tokens: int = 450  # Hard limit per chunk (default: 450)
+```
+
+**Recommendations:**
+- **For more natural speech**: Use smaller chunks (175-250 range)
+- **For faster processing**: Use larger chunks (350-600 range), but may sound more robotic
+- **Default values** (175/250/450) provide good balance
+
+#### 2. **Gap Trimming** (Controls pauses between chunks)
+
+Located in `api/src/core/config.py`:
+
+```python
+gap_trim_ms: int = 1  # Base trim amount in milliseconds
+dynamic_gap_trim_padding_ms: int = 410  # Additional padding
+
+# Adjust pause length by punctuation type
+dynamic_gap_trim_padding_char_multiplier: dict[str, float] = {
+    ".": 1.0,   # Period - standard pause
+    "!": 0.9,   # Exclamation - slightly shorter
+    "?": 1.0,   # Question - standard pause
+    ",": 0.8,   # Comma - shorter pause
+}
+```
+
+**Recommendations:**
+- **Increase `dynamic_gap_trim_padding_ms`** to 600-800 for longer, more natural pauses
+- **Adjust multipliers** for different punctuation (e.g., comma: 1.0-1.2 for longer pauses)
+
+#### 3. **Speed Control** (Per-request setting)
+
+Available in all API endpoints:
+
+```python
+response = requests.post(
+    "http://localhost:8880/v1/audio/speech",
+    json={
+        "input": "Hello world!",
+        "voice": "af_bella",
+        "speed": 0.95  # Slightly slower (0.5-2.0 range)
+    }
+)
+```
+
+**Recommendations:**
+- **Default**: 1.0 (normal speed)
+- **More deliberate**: 0.85-0.95
+- **Faster**: 1.1-1.3
+
+#### 4. **Text Normalization** (Advanced)
+
+Located in `api/src/core/config.py`:
+
+```python
+advanced_text_normalization: bool = True  # Preprocess text before TTS
+```
+
+This automatically converts:
+- URLs → speakable text ("example.com" → "example dot com")
+- Numbers → words ("$50" → "fifty dollars")
+- Abbreviations → full words ("Dr." → "Doctor")
+- Special characters → proper formatting
+
+**Keep enabled** unless you're handling normalization elsewhere.
+
+#### 5. **Environment Variables**
+
+Override config settings without editing code:
+
+```bash
+# Docker run example
+docker run -p 8880:8880 \
+  -e TARGET_MIN_TOKENS=175 \
+  -e TARGET_MAX_TOKENS=250 \
+  -e DYNAMIC_GAP_TRIM_PADDING_MS=600 \
+  ghcr.io/remsky/kokoro-fastapi-gpu:latest
+```
+
+### What NOT to Adjust
+
+⚠️ **Do not modify** `api/src/models/v1_0/config.json` - This contains model architecture parameters that were set during training. Changing these will break the model or produce garbage output.
+
+### Troubleshooting Common Issues
+
+| Issue | Likely Cause | Solution |
+|-------|-------------|----------|
+| Robotic, run-on speech | Chunks too large | Reduce `target_max_tokens` to 200-250 |
+| Speech too fast | Speed too high | Lower `speed` to 0.9-0.95 |
+| Awkward pauses | Gap trimming too aggressive | Increase `dynamic_gap_trim_padding_ms` to 600-800 |
+| Missing natural breaks | Chunks too large | Use default values (175/250/450) |
+
+### Example Configuration for Natural Speech
+
+```python
+# In api/src/core/config.py (or via environment variables)
+
+# Optimal for natural, conversational speech:
+target_min_tokens: int = 175
+target_max_tokens: int = 250
+absolute_max_tokens: int = 450
+dynamic_gap_trim_padding_ms: int = 600
+
+# Per-request:
+{
+    "input": "Your text here",
+    "voice": "af_heart",
+    "speed": 0.95  # Slightly slower for clarity
+}
+```
+
+</details>
+
 ## Processing Details
 <details>
 <summary>Performance Benchmarks</summary>
